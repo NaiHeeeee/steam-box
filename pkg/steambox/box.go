@@ -149,14 +149,31 @@ func (b *Box) UpdateMarkdown(ctx context.Context, title, filename string, conten
 	end := []byte("<!-- steam-box end -->")
 	after := md[bytes.Index(md, end):]
 
+	// 将内容转换为HTML表格格式
+	lines := strings.Split(string(content), "\n")
+	tableContent := "<table>\n"
+	for _, line := range lines {
+		if line == "" {
+			continue
+		}
+		
+		parts := strings.SplitN(line, "🕘", 2)
+		if len(parts) == 2 {
+			gameName := strings.TrimSpace(parts[0])
+			playTime := "🕘" + parts[1]
+			tableContent += fmt.Sprintf("  <tr>\n    <td>%s</td>\n    <td>%s</td>\n  </tr>\n", gameName, playTime)
+		} else {
+			tableContent += fmt.Sprintf("  <tr>\n    <td colspan=\"2\">%s</td>\n  </tr>\n", line)
+		}
+	}
+	tableContent += "</table>"
+
 	newMd := bytes.NewBuffer(nil)
 	newMd.Write(before)
 	newMd.WriteString("\n" + title + "\n")
-	newMd.WriteString("```text\n")
-	newMd.Write(content)
+	newMd.WriteString(tableContent)
 	newMd.WriteString("\n")
-	newMd.WriteString("```\n")
-	newMd.WriteString("<!-- Powered by https://github.com/YouEclipse/steam-box . -->\n")
+	newMd.WriteString("<!-- Powered by https://github.com/NaiHeeeee/steam-box . -->\n")
 	newMd.Write(after)
 
 	err = ioutil.WriteFile(filename, newMd.Bytes(), os.ModeAppend)

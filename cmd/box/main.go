@@ -5,6 +5,7 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"path/filepath"
 	"strconv"
 	"strings"
 
@@ -113,6 +114,17 @@ func main() {
 				continue // 跳过空文件名
 			}
 
+			// 确保文件所在目录存在
+			dir := filepath.Dir(markdownFile)
+			if dir != "." && dir != "" {
+				err := os.MkdirAll(dir, 0755)
+				if err != nil {
+					fmt.Printf("Error creating directory %s for file %s: %v\n", dir, markdownFile, err)
+					continue
+				}
+			}
+
+			// 更新 Markdown 文件
 			err = box.UpdateMarkdown(ctx, title, markdownFile, content.Bytes())
 			if err != nil {
 				fmt.Printf("Error updating markdown file %s: %v\n", markdownFile, err)

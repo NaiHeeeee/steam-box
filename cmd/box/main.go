@@ -43,9 +43,9 @@ func main() {
 			multiLined = true
 		}
 	}
-	
+
 	updateOption := os.Getenv("UPDATE_OPTION") // options for update: GIST (Gist only), MARKDOWN (README only), GIST_AND_MARKDOWN (Gist and README)
-	markdownFile := os.Getenv("MARKDOWN_FILE") // the markdown filename (e.g. MYFILE.md)
+	markdownFiles := strings.Split(os.Getenv("MARKDOWN_FILE"), ",") // 支持多个文件名，以逗号分隔
 
 	var updateGist, updateMarkdown bool
 	if updateOption == "MARKDOWN" {
@@ -63,7 +63,7 @@ func main() {
 
 	var (
 		filename string
-		lines []string
+		lines    []string
 	)
 
 	if steamOption == "ALLTIME" {
@@ -97,7 +97,7 @@ func main() {
 		}
 	}
 
-	if updateMarkdown && markdownFile != "" {
+	if updateMarkdown && len(markdownFiles) > 0 {
 		title := filename
 		if updateGist {
 			title = fmt.Sprintf(`#### <a href="https://gist.github.com/%s" target="_blank">%s</a>`, gistID, title)
@@ -106,10 +106,19 @@ func main() {
 		content := bytes.NewBuffer(nil)
 		content.WriteString(strings.Join(lines, "\n"))
 
-		err = box.UpdateMarkdown(ctx, title, markdownFile, content.Bytes())
-		if err != nil {
-			fmt.Println(err)
+		// 遍历所有 Markdown 文件并逐一更新
+		for _, markdownFile := range markdownFiles {
+			markdownFile = strings.TrimSpace(markdownFile) // 清理文件名中的空格
+			if markdownFile == "" {
+				continue // 跳过空文件名
+			}
+
+			err = box.UpdateMarkdown(ctx, title, markdownFile, content.Bytes())
+			if err != nil {
+				fmt.Printf("Error updating markdown file %s: %v\n", markdownFile, err)
+			} else {
+				fmt.Printf("Updated markdown successfully on %s\n", markdownFile)
+			}
 		}
-		fmt.Println("updating markdown successfully on ", markdownFile)
 	}
 }
